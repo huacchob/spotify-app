@@ -1,8 +1,18 @@
-from django.db.models import QuerySet
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, render
+import typing as t
 
+from django.contrib import messages
+from django.db.models import QuerySet
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponsePermanentRedirect,
+    HttpResponseRedirect,
+)
+from django.shortcuts import get_object_or_404, redirect, render
+
+from .forms import TrackSearchForm
 from .models import Album, Artist, Song
+from .services import SpotifyService
 
 
 # Home view (optional, links to major sections)
@@ -149,4 +159,51 @@ def song_detail(request: HttpRequest, song_id: int) -> HttpResponse:
             "album": song.album,
             "artists": song.artists.all(),
         },
+    )
+
+
+def fetch_track_view(
+    request: HttpRequest,
+) -> t.Union[
+    HttpResponseRedirect,
+    HttpResponsePermanentRedirect,
+    HttpResponse,
+]:
+    """
+    Fetch track view.
+
+    Args:
+        request (HttpRequest): Request object passed from urls module.
+    """
+    if request.method == "POST":
+        form = TrackSearchForm(data=request.POST)
+        if form.is_valid():
+            artist_name: str = form.cleaned_data["artist"]
+            track_name: str = form.cleaned_data["track_name"]
+
+            spotify_service: SpotifyService = SpotifyService()
+            spotify_service.search_query(
+                artist=artist_name,
+                track_name=track_name,
+            )
+
+            messages.success(
+                request=request,
+                message=f"Successfully fetched and added '{track_name}' by '{artist_name}'.",
+            )
+            return redirect(
+                to="album_list"
+            )  # Redirect to albums list or any other desired page
+        else:
+            messages.error(
+                request=request,
+                message="Invalid input. Please correct the errors below.",
+            )
+    else:
+        form = TrackSearchForm()
+
+    return render(
+        request=request,
+        template_name="spotify_integration/fetch_track_form.html",
+        context={"form": form},
     )

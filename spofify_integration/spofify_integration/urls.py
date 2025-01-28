@@ -54,4 +54,9 @@ urlpatterns: list[t.Any] = [
         view=views.song_detail,
         name="song_detail",
     ),
+    path(
+        route="fetch-track/",
+        view=views.fetch_track_view,
+        name="fetch_track",
+    ),
 ]
