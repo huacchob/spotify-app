@@ -32,4 +32,15 @@ urlpatterns: list[t.Any] = [
         view=views.artist_detail,
         name="artist_detail",
     ),
+    # Album URLs
+    path(
+        route="albums/",
+        view=views.album_list,
+        name="album_list",
+    ),
+    path(
+        route="album/<int:album_id>/",
+        view=views.album_detail,
+        name="album_detail",
+    ),
 ]
