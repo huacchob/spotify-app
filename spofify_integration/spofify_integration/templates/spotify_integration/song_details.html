@@ -1,0 +1,26 @@
+{% extends 'spotify_integration/base.html' %} {% block content %}
+<h1>{{ song.name }}</h1>
+<p><strong>Release Date:</strong> {{ song.release_date }}</p>
+<p><strong>Popularity:</strong> {{ song.popularity }}</p>
+
+<h3>Artists</h3>
+<ul class="list-group mb-4">
+  {% for artist in artists %}
+  <li class="list-group-item">
+    {{ artist.name }}
+    <a
+      href="{% url 'artist_detail' artist.id %}"
+      class="btn btn-sm btn-primary float-end"
+      >View Artist</a
+    >
+  </li>
+  {% endfor %}
+</ul>
+
+<h3>Album</h3>
+<p>
+  <a href="{% url 'album_detail' album.id %}" class="btn btn-secondary"
+    >{{ album.name }}</a
+  >
+</p>
+{% endblock %}

@@ -108,3 +108,45 @@ def album_detail(request: HttpRequest, album_id: int) -> HttpResponse:
             "artists": album.artists.all(),
         },
     )
+
+
+# Song Views
+def song_list(request: HttpRequest) -> HttpResponse:
+    """
+    Song List view.
+
+    Args:
+        request (HttpRequest): Request object passed from urls module.
+
+    Returns:
+        HttpResponse: Response object with Song template.
+    """
+    songs: QuerySet[Song] = Song.objects.all()
+    return render(
+        request=request,
+        template_name="spotify_integration/songs.html",
+        context={"songs": songs},
+    )
+
+
+def song_detail(request: HttpRequest, song_id: int) -> HttpResponse:
+    """
+    Song Detail view.
+
+    Args:
+        request (HttpRequest): Request object passed from urls module.
+        album_id (int): Song id passed from urls module.
+
+    Returns:
+        HttpResponse: Response object with song detail template.
+    """
+    song: Song = get_object_or_404(klass=Song, id=song_id)
+    return render(
+        request=request,
+        template_name="spotify_integration/song_detail.html",
+        context={
+            "song": song,
+            "album": song.album,
+            "artists": song.artists.all(),
+        },
+    )

@@ -43,4 +43,15 @@ urlpatterns: list[t.Any] = [
         view=views.album_detail,
         name="album_detail",
     ),
+    # Song URLs
+    path(
+        route="songs/",
+        view=views.song_list,
+        name="song_list",
+    ),
+    path(
+        route="song/<int:song_id>/",
+        view=views.song_detail,
+        name="song_detail",
+    ),
 ]
