@@ -23,6 +23,8 @@ class Album(models.Model):
 
     name = models.CharField(max_length=255)
     release_date = models.DateField()
+    # A related_name attribute is the name of the reverse relationship used to
+    # access Album objects from Artist objects.
     artists = models.ManyToManyField(to=Artist, related_name="albums", blank=True)
     type = models.CharField(max_length=255)
 

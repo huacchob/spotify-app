@@ -1,0 +1,17 @@
+<!-- templates/artist_detail.html -->
+{% extends 'spotify_integration/base.html' %} {% block content %}
+<h1>{{ artist.name }}</h1>
+<h3>Albums</h3>
+<ul class="list-group">
+  {% for album in artist.albums.all %}
+  <li class="list-group-item">{{ album.name }} ({{ album.release_date }})</li>
+  {% endfor %}
+</ul>
+
+<h3>Songs</h3>
+<ul class="list-group">
+  {% for song in artist.songs.all %}
+  <li class="list-group-item">{{ song.name }} ({{ song.album.name }})</li>
+  {% endfor %}
+</ul>
+{% endblock %}

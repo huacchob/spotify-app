@@ -1,0 +1,16 @@
+<!-- templates/artists.html -->
+{% extends 'spotify_integration/base.html' %} {% block content %}
+<h1>All Artists</h1>
+<ul class="list-group">
+  {% for artist in artists %}
+  <li class="list-group-item">
+    {{ artist.name }}
+    <a
+      href="{% url 'artist_detail' artist.id %}"
+      class="btn btn-sm btn-primary float-end"
+      >View</a
+    >
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}
