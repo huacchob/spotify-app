@@ -1,0 +1,17 @@
+{% extends 'spotify_integration/base.html' %} {% block content %}
+<div class="text-center mt-5">
+  <h1>Welcome to the Music App</h1>
+  <p>Explore the world of Rap, Hip-Hop, and R&B music.</p>
+  <div class="mt-4">
+    <a href="{% url 'artist_list' %}" class="btn btn-primary btn-lg"
+      >View Artists</a
+    >
+    <a href="{% url 'album_list' %}" class="btn btn-secondary btn-lg"
+      >View Albums</a
+    >
+    <a href="{% url 'song_list' %}" class="btn btn-success btn-lg"
+      >View Songs</a
+    >
+  </div>
+</div>
+{% endblock %}
