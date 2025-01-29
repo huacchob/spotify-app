@@ -24,6 +24,7 @@ class AlbumAdmin(admin.ModelAdmin):
         "type",
         "release_date",
         "get_artists",  # Custom method to display associated artists
+        "album_id",
         "id",
     )
     # filter_horizontal is an attribute used to manage the ManyToManyField relationships

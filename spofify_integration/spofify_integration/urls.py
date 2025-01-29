@@ -70,4 +70,9 @@ urlpatterns: list[t.Any] = [
         view=views.fetch_artist_albums_view,
         name="fetch_artist_albums",
     ),
+    path(
+        route="fetch-all-songs-from-an-artist/",
+        view=views.fetch_artist_albums_view,
+        name="fetch_all_songs_from_an_artist",
+    ),
 ]

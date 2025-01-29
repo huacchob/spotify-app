@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import spotipy
 from django.conf import settings
+from django.db.models import QuerySet
 from spotipy.oauth2 import SpotifyOAuth
 
 from .models import Album, Artist, Genre, Song
@@ -81,6 +82,7 @@ class SpotifyService:
         release_date: str,
         type: str,
         artists: list[Artist],
+        album_id: str = "",
     ) -> Album:
         """
         Get or create an album in the database.
@@ -90,6 +92,7 @@ class SpotifyService:
             release_date (str): Release date.
             type (str): Album type.
             artists (list[Artist]): List of artists.
+            album_id (str): Spotify Album ID.
 
         Returns:
             Album: The album object.
@@ -102,6 +105,7 @@ class SpotifyService:
             type=type,
         )[0]
         album.artists.add(*artists)
+        album.album_id = album_id
         album.save()
         logger.info(f"Created album: {album}")
         return album
@@ -278,3 +282,46 @@ class SpotifyService:
                 type=album["album_type"],
                 artists=album_artists,
             )
+
+    def search_all_songs_from_an_artist(self, artist: str) -> None:
+        """
+        Get Artist information.
+
+        Args:
+            artist (str): Artist name.
+        """
+        self.search_all_albums_by_artist(artist=artist)
+        a: Artist = Artist.objects.get(name=artist)
+        all_albums: QuerySet[Album] = a.albums.all()
+        for album in all_albums:
+            try:
+                results: Any | None = self.client.album_tracks(
+                    album_id_id=album.album_id,
+                    limit=20,
+                )
+            except spotipy.SpotifyException as e:
+                logger.error(f"Spotify API error: {e}")
+                return
+            except Exception as e:
+                logger.error(f"Unexpected error during Spotify search: {e}")
+                return
+
+            if not results or not results["items"]:
+                logger.info(f"No results found for artist: {artist}")
+                return
+            
+            album_songs = results["items"]
+            for song in album_songs:
+                song_artists: list[Artist] = []
+                for artist in song["artists"]:
+                    self.search_artist(artist=artist["name"])
+                    song_artists.append(
+                        Artist.objects.get(name=artist["name"]),
+                    )
+                s: Song = self.get_or_create_song(
+                    name=song["name"],
+                    album=album,
+                    release_date=album.release_date,
+                    popularity=0,
+                    artists=song_artists,
+                )

@@ -297,3 +297,48 @@ def fetch_artist_albums_view(
         template_name="spotify_integration/fetch_artist_albums_form.html",
         context={"form": form},
     )
+
+
+def fetch_all_songs_from_an_artist(
+    request: HttpRequest,
+) -> t.Union[
+    HttpResponseRedirect,
+    HttpResponsePermanentRedirect,
+    HttpResponse,
+]:
+    """
+    Fetch track view.
+
+    Args:
+        request (HttpRequest): Request object passed from urls module.
+    """
+    if request.method == "POST":
+        form = ArtistForm(data=request.POST)
+        if form.is_valid():
+            artist_name: str = form.cleaned_data["artist"]
+
+            spotify_service: SpotifyService = SpotifyService()
+            spotify_service.search_all_songs_from_an_artist(
+                artist=artist_name,
+            )
+
+            messages.success(
+                request=request,
+                message=f"Successfully fetched and added all albums by '{artist_name}'.",
+            )
+            return redirect(
+                to="song_list"
+            )  # Redirect to songs list or any other desired page
+        else:
+            messages.error(
+                request=request,
+                message="Invalid input. Please correct the errors below.",
+            )
+    else:
+        form = ArtistForm()
+
+    return render(
+        request=request,
+        template_name="spotify_integration/fetch_all_songs_from_an_artist.html",
+        context={"form": form},
+    )
