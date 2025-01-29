@@ -33,7 +33,11 @@
       <td>
         <a href="{% url 'song_detail' song.id %}">{{ song.name }}</a>
       </td>
-      <td>{{ song.artists.all|join:", " }}</td>
+      <td>
+        {% for artist in song.artists.all %}
+          <a href="{% url 'artist_detail' artist.id %}">{{ artist.name }}</a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </td>
       <td>{{ song.popularity }}</td>
     </tr>
     {% endfor %}

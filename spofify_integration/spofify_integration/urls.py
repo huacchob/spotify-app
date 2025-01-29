@@ -28,7 +28,7 @@ urlpatterns: list[t.Any] = [
     # Artist URLs
     path(route="artists/", view=views.artist_list, name="artist_list"),
     path(
-        route="artist/<int:artist_id>/",
+        route="artist/<uuid:artist_id>/",
         view=views.artist_detail,
         name="artist_detail",
     ),
@@ -39,7 +39,7 @@ urlpatterns: list[t.Any] = [
         name="album_list",
     ),
     path(
-        route="album/<int:album_id>/",
+        route="album/<uuid:album_id>/",
         view=views.album_detail,
         name="album_detail",
     ),
@@ -50,13 +50,24 @@ urlpatterns: list[t.Any] = [
         name="song_list",
     ),
     path(
-        route="song/<int:song_id>/",
+        route="song/<uuid:song_id>/",
         view=views.song_detail,
         name="song_detail",
     ),
+    # Fetch URLs
     path(
         route="fetch-track/",
-        view=views.fetch_track_view,
+        view=views.fetch_track_artist_view,
         name="fetch_track",
+    ),
+    path(
+        route="fetch-artist/",
+        view=views.fetch_artist_view,
+        name="fetch_artist",
+    ),
+    path(
+        route="fetch-artists-albums/",
+        view=views.fetch_artist_albums_view,
+        name="fetch_artist_albums",
     ),
 ]

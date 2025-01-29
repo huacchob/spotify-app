@@ -10,7 +10,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import TrackSearchForm
+from .forms import ArtistForm, TrackArtistForm
 from .models import Album, Artist, Song
 from .services import SpotifyService
 
@@ -153,7 +153,7 @@ def song_detail(request: HttpRequest, song_id: int) -> HttpResponse:
     song: Song = get_object_or_404(klass=Song, id=song_id)
     return render(
         request=request,
-        template_name="spotify_integration/song_detail.html",
+        template_name="spotify_integration/song_details.html",
         context={
             "song": song,
             "album": song.album,
@@ -162,7 +162,52 @@ def song_detail(request: HttpRequest, song_id: int) -> HttpResponse:
     )
 
 
-def fetch_track_view(
+def fetch_artist_view(
+    request: HttpRequest,
+) -> t.Union[
+    HttpResponseRedirect,
+    HttpResponsePermanentRedirect,
+    HttpResponse,
+]:
+    """
+    Fetch Artist view.
+
+    Args:
+        request (HttpRequest): Request object passed from urls module.
+    """
+    if request.method == "POST":
+        form = ArtistForm(data=request.POST)
+        if form.is_valid():
+            artist_name: str = form.cleaned_data["artist"]
+
+            spotify_service: SpotifyService = SpotifyService()
+            spotify_service.search_artist(
+                artist=artist_name,
+            )
+
+            messages.success(
+                request=request,
+                message=f"Successfully fetched and added artist '{artist_name}'.",
+            )
+            return redirect(
+                to="artist_list"
+            )  # Redirect to songs list or any other desired page
+        else:
+            messages.error(
+                request=request,
+                message="Invalid input. Please correct the errors below.",
+            )
+    else:
+        form = ArtistForm()
+
+    return render(
+        request=request,
+        template_name="spotify_integration/fetch_artist_form.html",
+        context={"form": form},
+    )
+
+
+def fetch_track_artist_view(
     request: HttpRequest,
 ) -> t.Union[
     HttpResponseRedirect,
@@ -176,13 +221,13 @@ def fetch_track_view(
         request (HttpRequest): Request object passed from urls module.
     """
     if request.method == "POST":
-        form = TrackSearchForm(data=request.POST)
+        form = TrackArtistForm(data=request.POST)
         if form.is_valid():
             artist_name: str = form.cleaned_data["artist"]
             track_name: str = form.cleaned_data["track_name"]
 
             spotify_service: SpotifyService = SpotifyService()
-            spotify_service.search_query(
+            spotify_service.search_artist_and_song(
                 artist=artist_name,
                 track_name=track_name,
             )
@@ -192,18 +237,63 @@ def fetch_track_view(
                 message=f"Successfully fetched and added '{track_name}' by '{artist_name}'.",
             )
             return redirect(
-                to="album_list"
-            )  # Redirect to albums list or any other desired page
+                to="song_list"
+            )  # Redirect to songss list or any other desired page
         else:
             messages.error(
                 request=request,
                 message="Invalid input. Please correct the errors below.",
             )
     else:
-        form = TrackSearchForm()
+        form = TrackArtistForm()
 
     return render(
         request=request,
-        template_name="spotify_integration/fetch_track_form.html",
+        template_name="spotify_integration/fetch_track_artist_form.html",
+        context={"form": form},
+    )
+
+
+def fetch_artist_albums_view(
+    request: HttpRequest,
+) -> t.Union[
+    HttpResponseRedirect,
+    HttpResponsePermanentRedirect,
+    HttpResponse,
+]:
+    """
+    Fetch track view.
+
+    Args:
+        request (HttpRequest): Request object passed from urls module.
+    """
+    if request.method == "POST":
+        form = ArtistForm(data=request.POST)
+        if form.is_valid():
+            artist_name: str = form.cleaned_data["artist"]
+
+            spotify_service: SpotifyService = SpotifyService()
+            spotify_service.search_all_albums_by_artist(
+                artist=artist_name,
+            )
+
+            messages.success(
+                request=request,
+                message=f"Successfully fetched and added all albums by '{artist_name}'.",
+            )
+            return redirect(
+                to="album_list"
+            )  # Redirect to songs list or any other desired page
+        else:
+            messages.error(
+                request=request,
+                message="Invalid input. Please correct the errors below.",
+            )
+    else:
+        form = ArtistForm()
+
+    return render(
+        request=request,
+        template_name="spotify_integration/fetch_artist_albums_form.html",
         context={"form": form},
     )

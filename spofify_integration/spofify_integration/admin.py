@@ -1,11 +1,18 @@
 from django.contrib import admin
 
-from .models import Album, Artist, Song
+from .models import Album, Artist, Genre, Song
+
+
+@admin.register(Genre)
+class GenreAdmin(admin.ModelAdmin):
+    list_display = ("name",)  # Display the artist's name
+    search_fields = ("name",)  # Add search functionality for artist names
 
 
 @admin.register(Artist)
 class ArtistAdmin(admin.ModelAdmin):
-    list_display = ("name",)  # Display the artist's name
+    list_display = ("name", "artist_id", "id")  # Display the artist's name
+    filter_horizontal = ("genres",)
     search_fields = ("name",)  # Add search functionality for artist names
 
 
@@ -17,6 +24,7 @@ class AlbumAdmin(admin.ModelAdmin):
         "type",
         "release_date",
         "get_artists",  # Custom method to display associated artists
+        "id",
     )
     # filter_horizontal is an attribute used to manage the ManyToManyField relationships
     filter_horizontal = ("artists",)
@@ -43,6 +51,7 @@ class SongAdmin(admin.ModelAdmin):
         "popularity",
         "get_album",  # Custom method to display album name
         "get_artists",  # Custom method to display associated artists
+        "id",
     )
     filter_horizontal = ("artists",)  # Enable horizontal widget for ManyToManyField
     search_fields = ("name",)  # Add search functionality for song names

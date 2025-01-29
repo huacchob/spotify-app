@@ -7,15 +7,22 @@
       <th>Name</th>
       <th>Artists</th>
       <th>Release Date</th>
+      <th>Album Type</th>
+      <th>ID</th>
     </tr>
   </thead>
   <tbody>
     {% for album in albums %}
     <tr>
-      <td>{{ album.name }}</td>
-      <td>{{ album.artists|join:", " }}</td>
+      <td><a href="{% url 'album_detail' album.id %}">{{ album.name }}</a></td>
+      <td>
+        {% for artist in album.artists.all %}
+          <a href="{% url 'artist_detail' artist.id %}">{{ artist.name }}</a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </td>
       <td>{{ album.release_date }}</td>
       <td>{{ album.type }}</td>
+      <td>{{ album.id }}</td>
     </tr>
     {% endfor %}
   </tbody>

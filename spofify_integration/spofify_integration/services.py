@@ -7,7 +7,7 @@ import spotipy
 from django.conf import settings
 from spotipy.oauth2 import SpotifyOAuth
 
-from .models import Album, Artist, Song
+from .models import Album, Artist, Genre, Song
 
 if TYPE_CHECKING:
     from spotipy.client import Spotify
@@ -30,7 +30,150 @@ class SpotifyService:
             ),
         )
 
-    def search_query(self, artist: str, track_name: str) -> None:
+    def get_or_create_genres(
+        self,
+        genres: list[str]
+    ) -> list[Genre]:
+        """
+        Get or create an artist in the database.
+
+        Args:
+            genres (list[str]): List of Genre names.
+
+        Returns:
+            list[Genre]: List of Genre objects.
+        """
+        processed_genres: list[Genre] = []
+        for genre in genres:
+            g: Genre = Genre.objects.get_or_create(name=genre)[0]
+            processed_genres.append(g)
+        return processed_genres
+
+    def get_or_create_artist(
+        self,
+        name: str,
+        artist_id: str = "",
+        genres: list[Genre] = [],
+    ) -> Artist:
+        """
+        Get or create an artist in the database.
+
+        Args:
+            name (str): Artist name.
+            artist_id (str): Artist Spotify ID.
+            genres (list[str]): List of Genre objects.
+
+        Returns:
+            Artist: The artist object.
+        """
+        logger.info(f"Creating artist: {name}")
+        artist: Artist = Artist.objects.get_or_create(
+            name=name,
+        )[0]
+        artist.artist_id = artist_id
+        artist.genres.add(*genres)
+        artist.save()
+        return artist
+
+    def get_or_create_album(
+        self,
+        name: str,
+        release_date: str,
+        type: str,
+        artists: list[Artist],
+    ) -> Album:
+        """
+        Get or create an album in the database.
+
+        Args:
+            name (str): Album name.
+            release_date (str): Release date.
+            type (str): Album type.
+            artists (list[Artist]): List of artists.
+
+        Returns:
+            Album: The album object.
+        """
+        if len(release_date) != 10:
+            release_date = release_date + "-01-01"
+        album: Album = Album.objects.get_or_create(
+            name=name,
+            release_date=release_date,
+            type=type,
+        )[0]
+        album.artists.add(*artists)
+        album.save()
+        logger.info(f"Created album: {album}")
+        return album
+
+    def get_or_create_song(
+        self,
+        name: str,
+        album: Album,
+        release_date: str,
+        popularity: int,
+        artists: list[Artist],
+    ) -> Song:
+        """
+        Get or create a song in the database.
+
+        Args:
+            name (str): Song name.
+            album (Album): Album object.
+            release_date (str): Release date.
+            popularity (int): Popularity score.
+            artists (list[Artist]): List of artists.
+
+        Returns:
+            Song: The song object.
+        """
+        song: Song = Song.objects.get_or_create(
+            name=name,
+            album=album,
+            release_date=release_date,
+            popularity=popularity,
+        )[0]
+        song.artists.add(*artists)
+        song.save()
+        logger.info(f"Created song: {song}")
+        return song
+
+    def search_artist(self, artist: str) -> None:
+        """
+        Get Artist information.
+
+        Args:
+            artist (str): Artist name.
+        """
+        try:
+            results: Any | None = self.client.search(
+                q=artist,
+                type="artist",
+                limit=2,
+            )
+        except spotipy.SpotifyException as e:
+            logger.error(f"Spotify API error: {e}")
+            return
+        except Exception as e:
+            logger.error(f"Unexpected error during Spotify search: {e}")
+            return
+
+        if not results or not results["artists"]["items"]:
+            logger.info(f"No results found for artist: {artist}")
+            return
+
+        artist = results["artists"]["items"][0]
+        genres: list[Genre] = self.get_or_create_genres(
+            genres=artist["genres"],
+        )
+
+        self.get_or_create_artist(
+            name=artist["name"],
+            artist_id=artist["id"],
+            genres=genres,
+        )
+
+    def search_artist_and_song(self, artist: str, track_name: str) -> None:
         """
         Get a track from Spotify and create it in the database.
 
@@ -87,81 +230,51 @@ class SpotifyService:
             artists=track_artists,
         )
 
-    def get_or_create_artist(self, name: str) -> Artist:
+    def search_all_albums_by_artist(self, artist: str) -> None:
         """
-        Get or create an artist in the database.
+        Get Artist information.
 
         Args:
-            name (str): Artist name.
-
-        Returns:
-            Artist: The artist object.
+            artist (str): Artist name.
         """
-        logger.info(f"Creating artist: {name}")
-        return Artist.objects.get_or_create(name=name)[0]
+        main_artist: Artist = Artist.objects.get_or_create(name=artist)[0]
+        if not main_artist.artist_id:
+            self.search_artist(artist=main_artist.name)
+            main_artist = Artist.objects.get(name=main_artist.name)
+        try:
+            results: Any | None = self.client.artist_albums(
+                artist_id=main_artist.artist_id,
+                limit=20,
+            )
+        except spotipy.SpotifyException as e:
+            logger.error(f"Spotify API error: {e}")
+            return
+        except Exception as e:
+            logger.error(f"Unexpected error during Spotify search: {e}")
+            return
 
-    def get_or_create_album(
-        self,
-        name: str,
-        release_date: str,
-        type: str,
-        artists: list[Artist],
-    ) -> Album:
-        """
-        Get or create an album in the database.
+        if not results or not results["items"]:
+            logger.info(f"No results found for artist: {artist}")
+            return
 
-        Args:
-            name (str): Album name.
-            release_date (str): Release date.
-            type (str): Album type.
-            artists (list[Artist]): List of artists.
-
-        Returns:
-            Album: The album object.
-        """
-        album, created = Album.objects.get_or_create(
-            name=name,
-            release_date=release_date,
-            type=type,
-        )
-        if created:
-            album.artists.set(artists)
-            album.save()
-        else:
-            album.artists.add(*artists)
-            album.save()
-        logger.info(f"Created album: {album}")
-        return album
-
-    def get_or_create_song(
-        self,
-        name: str,
-        album: Album,
-        release_date: str,
-        popularity: int,
-        artists: list[Artist],
-    ) -> Song:
-        """
-        Get or create a song in the database.
-
-        Args:
-            name (str): Song name.
-            album (Album): Album object.
-            release_date (str): Release date.
-            popularity (int): Popularity score.
-            artists (list[Artist]): List of artists.
-
-        Returns:
-            Song: The song object.
-        """
-        song, created = Song.objects.get_or_create(
-            name=name,
-            album=album,
-            release_date=release_date,
-            popularity=popularity,
-        )
-        for artist in artists:
-            song.artists.add(artist)
-            song.save()
-        logger.info(f"Created song: {song}")
-        return song
+        albums = results["items"]
+        for album in albums:
+            album_artists: list[Artist] = []
+            for a in album["artists"]:
+                album_artist = self.get_or_create_artist(
+                    name=a["name"],
+                )
+                if not album_artist.artist_id:
+                    self.search_artist(artist=album_artist.name)
+                    album_artist: Artist = Artist.objects.get(
+                        name=album_artist.name,
+                    )
+                album_artists.append(
+                    album_artist,
+                )
+            self.get_or_create_album(
+                name=album["name"],
+                release_date=album["release_date"],
+                type=album["album_type"],
+                artists=album_artists,
+            )

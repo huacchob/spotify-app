@@ -4,14 +4,14 @@
 <h3>Albums</h3>
 <ul class="list-group">
   {% for album in artist.albums.all %}
-  <li class="list-group-item">{{ album.name }} ({{ album.release_date }})</li>
+  <li class="list-group-item"><a href="{% url 'album_detail' album.id %}">{{ album.name }}</a> ({{ album.release_date }})</li>
   {% endfor %}
 </ul>
 
 <h3>Songs</h3>
 <ul class="list-group">
   {% for song in artist.songs.all %}
-  <li class="list-group-item">{{ song.name }} ({{ song.album.name }})</li>
+  <li class="list-group-item"><a href="{% url 'song_detail' song.id %}">{{ song.name }}</a> ({{ song.album.name }})</li>
   {% endfor %}
 </ul>
 {% endblock %}
