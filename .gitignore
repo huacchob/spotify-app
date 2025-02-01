@@ -1,5 +1,0 @@
-*.pyc
-.qodo/
-creds.env
-*db.sqlite3
-.cache
