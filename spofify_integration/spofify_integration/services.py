@@ -113,15 +113,16 @@ class SpotifyService:
                 album.save()
             return album
         except IntegrityError:
-            return Album.objects.get(
-                name=name,
-                release_date=release_date,
-            )
-        except MultipleObjectsReturned:
-            return Album.objects.filter(
-                name=name,
-                artists=artists,
-            ).first()
+            try:
+                return Album.objects.get(
+                    name=name,
+                    release_date=release_date,
+                )
+            except MultipleObjectsReturned:
+                return Album.objects.filter(
+                    name=name,
+                    artists=artists,
+                ).first()
 
     def get_or_create_song(
         self,
@@ -156,15 +157,16 @@ class SpotifyService:
                 song.save()
             return song
         except IntegrityError:
-            return Song.objects.get(
-                name=name,
-                album=album,
-            )
-        except MultipleObjectsReturned:
-            return Song.objects.filter(
-                name=name,
-                album=album,
-            ).first()
+            try:
+                return Song.objects.get(
+                    name=name,
+                    album=album,
+                )
+            except MultipleObjectsReturned:
+                return Song.objects.filter(
+                    name=name,
+                    album=album,
+                ).first()
 
     def search_artist(self, artist: str) -> None:
         """
