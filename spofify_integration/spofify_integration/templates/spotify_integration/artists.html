@@ -1,15 +1,17 @@
 <!-- templates/artists.html -->
-{% extends 'spotify_integration/base.html' %} {% block content %}
+{% extends 'spotify_integration/base.html' %}
+
+{% block content %}
 <h1>All Artists</h1>
 
 <!-- Search Bar Form -->
-  <form method="get" action="{% url 'artist_list' %}">
-    {% csrf_token %}
-    <div class="input-group mb-3">
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-primary">Search</button>
-    </div>
-  </form>
+<form method="get" action="{% url 'artist_list' %}">
+  {% csrf_token %}
+  <div class="input-group mb-3">
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Search</button>
+  </div>
+</form>
 
 <table class="table table-striped">
   <thead>
@@ -37,8 +39,8 @@
 <div class="pagination">
   <span class="step-links">
     {% if page_obj.has_previous %}
-      <a href="?page=1">&laquo; first</a>
-      <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+      <a href="?page=1&query={{ request.GET.query }}">&laquo; first</a>
+      <a href="?page={{ page_obj.previous_page_number }}&query={{ request.GET.query }}">previous</a>
     {% endif %}
 
     <span class="current">
@@ -46,9 +48,10 @@
     </span>
 
     {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}">next</a>
-      <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+      <a href="?page={{ page_obj.next_page_number }}&query={{ request.GET.query }}">next</a>
+      <a href="?page={{ page_obj.paginator.num_pages }}&query={{ request.GET.query }}">last &raquo;</a>
     {% endif %}
   </span>
 </div>
+
 {% endblock %}

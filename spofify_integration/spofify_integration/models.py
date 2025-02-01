@@ -97,3 +97,27 @@ class Song(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.album.name if self.album else 'Single'})"
+
+
+class Playlist(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    # Other fields like created_at, etc.
+
+    def __str__(self):
+        return self.name
+
+
+class PlaylistSong(models.Model):
+    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
+    song = models.ForeignKey(Song, on_delete=models.CASCADE)
+
+    # Ensure that the song is unique within the playlist
+    class Meta:
+        unique_together = (
+            "playlist",
+            "song",
+        )  # Enforce uniqueness for each song in a playlist
+
+    def __str__(self):
+        return f"{self.playlist.name} - {self.song.name}"

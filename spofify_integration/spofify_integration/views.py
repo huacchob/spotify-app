@@ -60,7 +60,11 @@ def artist_list(request: HttpRequest) -> HttpResponse:
     return render(
         request=request,
         template_name="spotify_integration/artists.html",
-        context={"artists": artists, "page_obj": page_obj, "form": form},
+        context={
+            "artists": page_obj.object_list,
+            "page_obj": page_obj,
+            "form": form,
+        },
     )
 
 
@@ -123,7 +127,11 @@ def album_list(request: HttpRequest) -> HttpResponse:
     return render(
         request=request,
         template_name="spotify_integration/albums.html",
-        context={"albums": albums, "page_obj": page_obj, "form": form},
+        context={
+            "albums": page_obj.object_list,
+            "page_obj": page_obj,
+            "form": form,
+        },
     )
 
 
@@ -193,7 +201,11 @@ def song_list(request: HttpRequest) -> HttpResponse:
     return render(
         request=request,
         template_name="spotify_integration/songs.html",
-        context={"songs": songs, "page_obj": page_obj, "form": form},
+        context={
+            "songs": page_obj.object_list,
+            "page_obj": page_obj,
+            "form": form,
+        },
     )
 
 
