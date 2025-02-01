@@ -21,7 +21,7 @@ class AlbumAdmin(admin.ModelAdmin):
     # Attribute controls which fields or methods are displayed in the admin interface
     list_display = (
         "name",
-        "type",
+        "album_type",
         "release_date",
         "get_artists",  # Custom method to display associated artists
         "album_id",

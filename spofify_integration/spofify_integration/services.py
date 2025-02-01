@@ -3,6 +3,7 @@ from typing import Any
 
 import spotipy
 from django.conf import settings
+from django.core.exceptions import MultipleObjectsReturned
 from django.db import IntegrityError
 from django.db.models import QuerySet
 from spotipy.client import Spotify
@@ -81,7 +82,7 @@ class SpotifyService:
         self,
         name: str,
         release_date: str,
-        type: str,
+        album_type: str,
         artists: list[Artist],
         album_id: str = "",
     ) -> Album:
@@ -91,7 +92,7 @@ class SpotifyService:
         Args:
             name (str): Album name.
             release_date (str): Release date.
-            type (str): Album type.
+            album_type (str): Album type.
             artists (list[Artist]): List of artists.
             album_id (str): Spotify Album ID.
 
@@ -104,7 +105,7 @@ class SpotifyService:
             album, created = Album.objects.get_or_create(
                 name=name,
                 release_date=release_date,
-                type=type,
+                album_type=album_type,
                 album_id=album_id,
             )
             if created:
@@ -116,6 +117,11 @@ class SpotifyService:
                 name=name,
                 release_date=release_date,
             )
+        except MultipleObjectsReturned:
+            return Album.objects.filter(
+                name=name,
+                artists=artists,
+            ).first()
 
     def get_or_create_song(
         self,
@@ -154,6 +160,11 @@ class SpotifyService:
                 name=name,
                 album=album,
             )
+        except MultipleObjectsReturned:
+            return Song.objects.filter(
+                name=name,
+                album=album,
+            ).first()
 
     def search_artist(self, artist: str) -> None:
         """
@@ -226,7 +237,7 @@ class SpotifyService:
         self.get_or_create_album(
             name=album["name"],
             release_date=album["release_date"],
-            type=album["album_type"],
+            album_type=album["album_type"],
             artists=album_artists,
             album_id=album["id"],
         )
@@ -314,6 +325,10 @@ class SpotifyService:
             for a in album["artists"]:
                 self.search_artist(artist=a["name"])
                 album_artists.append(Artist.objects.get(name=a["name"]))
+                self.search_artist_and_album(
+                    artist=a["name"],
+                    album_name=album["name"],
+                )
             self.search_artist_and_album(
                 artist=artist,
                 album_name=album["name"],

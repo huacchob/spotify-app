@@ -55,7 +55,7 @@ class Album(models.Model):
         related_name="albums",
         blank=True,
     )
-    type = models.CharField(max_length=255)
+    album_type = models.CharField(max_length=255)
     album_id = models.CharField(max_length=255, blank=True)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
