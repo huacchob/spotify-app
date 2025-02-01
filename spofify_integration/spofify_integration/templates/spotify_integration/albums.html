@@ -1,0 +1,63 @@
+<!-- templates/albums.html -->
+{% extends 'spotify_integration/base.html' %} {% block content %}
+<h1>All Albums</h1>
+
+<!-- Search Bar Form -->
+  <form method="get" action="{% url 'album_list' %}">
+    {% csrf_token %}
+    <div class="input-group mb-3">
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+  </form>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Artists</th>
+      <th>Release Date</th>
+      <th>Album Type</th>
+      <th>ID</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for album in page_obj %}
+    <tr>
+      <td><a href="{% url 'album_detail' album.id %}">{{ album.name }}</a></td>
+      <td>
+        {% for artist in album.artists.all %}
+          <a href="{% url 'artist_detail' artist.id %}">{{ artist.name }}</a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </td>
+      <td>{{ album.release_date }}</td>
+      <td>{{ album.type }}</td>
+      <td>{{ album.id }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6">No songs available.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Pagination Controls -->
+<div class="pagination">
+  <span class="step-links">
+    {% if page_obj.has_previous %}
+      <a href="?page=1">&laquo; first</a>
+      <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+    {% endif %}
+
+    <span class="current">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}">next</a>
+      <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+    {% endif %}
+  </span>
+</div>
+{% endblock %}

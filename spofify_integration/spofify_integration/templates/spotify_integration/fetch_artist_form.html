@@ -1,0 +1,12 @@
+{% extends "spotify_integration/base.html" %} {% block content %}
+<div class="container mt-5">
+  <h2>Fetch and Add Artist from Spotify</h2>
+  <form method="POST" novalidate>
+    {% csrf_token %} {{ form.non_field_errors }}
+    <div class="mb-3">
+      {{ form.artist.label_tag }} {{ form.artist }} {{ form.artist.errors }}
+    </div>
+    <button type="submit" class="btn btn-primary">Fetch Artist</button>
+  </form>
+</div>
+{% endblock %}
