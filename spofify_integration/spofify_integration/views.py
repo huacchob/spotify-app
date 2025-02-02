@@ -220,7 +220,13 @@ def song_list(request: HttpRequest) -> HttpResponse:
     """
     sort_by = request.GET.get("sort_by", "name")  # Default to 'name'
     sort_order = request.GET.get("sort_order", "asc")  # Default to ascending order
-    valid_sort_fields = ["name", "release_date", "artists__name", "album__name"]
+    valid_sort_fields = [
+        "name",
+        "release_date",
+        "artists__name",
+        "album__name",
+        "popularity",
+    ]
     valid_sort_orders = ["asc", "desc"]
 
     # Validate the sorting parameters
