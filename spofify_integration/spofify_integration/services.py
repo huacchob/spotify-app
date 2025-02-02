@@ -1,5 +1,6 @@
 import logging
-from typing import Any
+import pdb
+from typing import Any, Union
 
 import spotipy
 from django.conf import settings
@@ -28,24 +29,49 @@ class SpotifyService:
             ),
         )
 
-    def get_or_create_genres(
+    def object_handling(
         self,
-        genres: list[str]
-    ) -> list[Genre]:
+        object_type: Union[Song, Artist, Album],
+        obj_params: dict[Any, Any],
+    ) -> Union[Song, Artist, Album]:
+        """
+        Get an object from the database.
+
+        Args:
+            object_type (Any): The object to get, Song, Artist, Album.
+
+
+        Returns:
+            Union[Song, Artist, Album]: The object.
+        """
+        o: Union[Song, Artist, Album] = object_type.objects.filter(**obj_params)
+        if o.exists():
+            return o.first()
+        else:
+            raise object_type.DoesNotExist(
+                f"Model {object_type} with name {obj_params.get('name')} does not exist",
+            )
+
+    def get_or_create_genres(self, name: str) -> Genre:
         """
         Get or create an artist in the database.
 
         Args:
-            genres (list[str]): List of Genre names.
+            name (str): Genre name.
 
         Returns:
-            list[Genre]: List of Genre objects.
+            Genre: Genre object.
         """
-        processed_genres: list[Genre] = []
-        for genre in genres:
-            g: Genre = Genre.objects.get_or_create(name=genre)[0]
-            processed_genres.append(g)
-        return processed_genres
+        try:
+            g: Genre = Genre.objects.get_or_create(
+                name=name,
+            )[0]
+            return g
+        except IntegrityError:
+            return self.object_handling(
+                object_type=Genre,
+                obj_params={"name__iexact": name},
+            )
 
     def get_or_create_artist(
         self,
@@ -74,8 +100,9 @@ class SpotifyService:
                 artist.save()
             return artist
         except IntegrityError:
-            return Artist.objects.get(
-                name=name,
+            return self.object_handling(
+                object_type=Artist,
+                obj_params={"name__iexact": name},
             )
 
     def get_or_create_album(
@@ -113,16 +140,15 @@ class SpotifyService:
                 album.save()
             return album
         except IntegrityError:
-            try:
-                return Album.objects.get(
-                    name=name,
-                    release_date=release_date,
-                )
-            except MultipleObjectsReturned:
-                return Album.objects.filter(
-                    name=name,
-                    artists=artists,
-                ).first()
+            return self.object_handling(
+                object_type=Album,
+                obj_params={"name__iexact": name, "artists": artists},
+            )
+        except MultipleObjectsReturned:
+            return self.object_handling(
+                object_type=Album,
+                obj_params={"name__iexact": name, "artists": artists},
+            )
 
     def get_or_create_song(
         self,
@@ -157,16 +183,15 @@ class SpotifyService:
                 song.save()
             return song
         except IntegrityError:
-            try:
-                return Song.objects.get(
-                    name=name,
-                    album=album,
-                )
-            except MultipleObjectsReturned:
-                return Song.objects.filter(
-                    name=name,
-                    album=album,
-                ).first()
+            return self.object_handling(
+                object_type=Song,
+                obj_params={"name__iexact": name, "album": album},
+            )
+        except MultipleObjectsReturned:
+            return self.object_handling(
+                object_type=Song,
+                obj_params={"name__iexact": name, "album": album},
+            )
 
     def search_artist(self, artist: str) -> None:
         """
@@ -193,9 +218,13 @@ class SpotifyService:
             return
 
         artist = results["artists"]["items"][0]
-        genres: list[Genre] = self.get_or_create_genres(
-            genres=artist["genres"],
-        )
+        genres: list[Genre] = []
+        for genre in artist["genres"]:
+            if genre and genre != "-":
+                g: Genre = self.get_or_create_genres(
+                    name=genre,
+                )
+                genres.append(g)
 
         self.get_or_create_artist(
             name=artist["name"],
@@ -232,10 +261,11 @@ class SpotifyService:
 
         album_artists = []
         for album_artist in album["artists"]:
-            self.search_artist(artist=album_artist["name"])
-            album_artists.append(
-                Artist.objects.get(name=album_artist["name"]),
-            )
+            if album_artist and album_artist != "-":
+                self.search_artist(artist=album_artist["name"])
+                album_artists.append(
+                    Artist.objects.get(name__iexact=album_artist["name"]),
+                )
         self.get_or_create_album(
             name=album["name"],
             release_date=album["release_date"],
@@ -274,20 +304,31 @@ class SpotifyService:
         track_artists = []
         album_artists = []
         for album_artist in track["album"]["artists"]:
-            self.search_artist(artist=album_artist["name"])
-            album_artists.append(
-                Artist.objects.get(name=album_artist["name"]),
-            )
+            if album_artist and album_artist != "-":
+                self.search_artist(artist=album_artist["name"])
+                album_artists.append(
+                    self.object_handling(
+                        object_type=Artist,
+                        obj_params={"name__iexact": album_artist["name"]},
+                    ),
+                )
         for track_artist in track["artists"]:
-            self.search_artist(artist=track_artist["name"])
-            track_artists.append(
-                Artist.objects.get(name=track_artist["name"]),
-            )
+            if track_artist and track_artist != "-":
+                self.search_artist(artist=track_artist["name"])
+                album_artists.append(
+                    self.object_handling(
+                        object_type=Artist,
+                        obj_params={"name__iexact": album_artist["name"]},
+                    ),
+                )
         self.search_artist_and_album(
             artist=artist,
             album_name=track["album"]["name"],
         )
-        album: Album = Album.objects.get(name=track["album"]["name"])
+        album: Album = self.object_handling(
+            object_type=Album,
+            obj_params={"name__iexact": track["album"]["name"]},
+        )
         self.get_or_create_song(
             name=track["name"],
             album=album,
@@ -304,7 +345,10 @@ class SpotifyService:
             artist (str): Artist name.
         """
         self.search_artist(artist=artist)
-        main_artist: Artist = Artist.objects.get(name=artist)
+        main_artist: Artist = self.object_handling(
+            object_type=Artist,
+            obj_params={"name__iexact": artist},
+        )
         try:
             results: Any | None = self.client.artist_albums(
                 artist_id=main_artist.artist_id,
@@ -325,12 +369,18 @@ class SpotifyService:
         for album in albums:
             album_artists: list[Artist] = []
             for a in album["artists"]:
-                self.search_artist(artist=a["name"])
-                album_artists.append(Artist.objects.get(name=a["name"]))
-                self.search_artist_and_album(
-                    artist=a["name"],
-                    album_name=album["name"],
-                )
+                if a and a != "-":
+                    self.search_artist(artist=a["name"])
+                    album_artists.append(
+                        self.object_handling(
+                            object_type=Artist,
+                            obj_params={"name__iexact": a["name"]},
+                        )
+                    )
+                    self.search_artist_and_album(
+                        artist=a["name"],
+                        album_name=album["name"],
+                    )
             self.search_artist_and_album(
                 artist=artist,
                 album_name=album["name"],
@@ -344,7 +394,11 @@ class SpotifyService:
             artist (str): Artist name.
         """
         self.search_all_albums_by_artist(artist=artist)
-        a: Artist = Artist.objects.get(name__iexact=artist)
+        pdb.set_trace()
+        a: Artist = self.object_handling(
+            object_type=Artist,
+            obj_params={"name__iexact": artist},
+        )
         all_albums: QuerySet[Album] = a.albums.all()
         for album in all_albums:
             try:
@@ -361,15 +415,19 @@ class SpotifyService:
             if not results or not results["items"]:
                 logger.info(f"No results found for artist: {artist}")
                 return
-            
+
             album_songs = results["items"]
             for song in album_songs:
                 song_artists: list[Artist] = []
                 for artist_entry in song["artists"]:
-                    self.search_artist(artist=artist_entry["name"])
-                    song_artists.append(
-                        Artist.objects.get(name=artist_entry["name"]),
-                    )
+                    if artist_entry and artist_entry != "-":
+                        self.search_artist(artist=artist_entry["name"])
+                        song_artists.append(
+                            self.object_handling(
+                                object_type=Artist,
+                                obj_params={"name__iexact": artist_entry["name"]},
+                            )
+                        )
                 self.search_artist_and_song(
                     artist=artist,
                     track_name=song["name"],

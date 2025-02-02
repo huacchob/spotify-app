@@ -18,11 +18,12 @@ Including another URLconf
 import typing as t
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 from . import views
 
 urlpatterns: list[t.Any] = [
+    path("__debug__/", include("debug_toolbar.urls")),
     path(route="admin/", view=admin.site.urls),
     path(route="", view=views.home, name="home"),  # Root page
     # Artist URLs

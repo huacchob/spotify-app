@@ -3,10 +3,19 @@ from django.contrib import admin
 from .models import Album, Artist, Genre, Song
 
 
+# Custom action for bulk delete
+def bulk_delete(modeladmin, request, queryset):
+    queryset.delete()
+
+
+bulk_delete.short_description = "Delete selected items"
+
+
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
     list_display = ("name",)  # Display the artist's name
     search_fields = ("name",)  # Add search functionality for artist names
+    actions = [bulk_delete]  # Add bulk delete action
 
 
 @admin.register(Artist)
@@ -14,6 +23,7 @@ class ArtistAdmin(admin.ModelAdmin):
     list_display = ("name", "artist_id", "id")  # Display the artist's name
     filter_horizontal = ("genres",)
     search_fields = ("name",)  # Add search functionality for artist names
+    actions = [bulk_delete]
 
 
 @admin.register(Album)
@@ -33,6 +43,7 @@ class AlbumAdmin(admin.ModelAdmin):
     search_fields = ("name",)
     # Add filter by release date
     list_filter = ("release_date",)
+    actions = [bulk_delete]
 
     def get_artists(self, obj: Album) -> str:
         return ", ".join([artist.name for artist in obj.artists.all()])
@@ -60,6 +71,7 @@ class SongAdmin(admin.ModelAdmin):
         "release_date",
         "popularity",
     )  # Add filters by release date and popularity
+    actions = [bulk_delete]
 
     def get_album(self, obj: Song):
         return obj.album.name if "album" or "Album" in obj.album.type else "Single"

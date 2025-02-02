@@ -44,8 +44,20 @@ def artist_list(request: HttpRequest) -> HttpResponse:
     Returns:
         HttpResponse: Response object with artists template.
     """
+    sort_by = request.GET.get("sort_by", "name")  # Default to 'name'
+    sort_order = request.GET.get("sort_order", "asc")  # Default to ascending order
+    valid_sort_fields = ["name"]
+    valid_sort_orders = ["asc", "desc"]
+
+    if sort_by not in valid_sort_fields:
+        sort_by = "name"
+    if sort_order not in valid_sort_orders:
+        sort_order = "asc"
+
+    ordering = f"{'-' if sort_order == 'desc' else ''}{sort_by}"
+
     form = SearchForm(data=request.GET)
-    artists: QuerySet[Artist] = Artist.objects.all()
+    artists: QuerySet[Artist] = Artist.objects.all().order_by("name")
     if form.is_valid():
         query = form.cleaned_data.get("query")
         if query:
@@ -54,6 +66,7 @@ def artist_list(request: HttpRequest) -> HttpResponse:
             ) | artists.filter(
                 artist_id__icontains=query,
             )
+    artists.order_by(ordering)
     paginator: Paginator = Paginator(object_list=artists, per_page=10)
     page_number: str | None = request.GET.get("page")
     page_obj: Page = paginator.get_page(number=page_number)
@@ -105,22 +118,41 @@ def album_list(request: HttpRequest) -> HttpResponse:
     Returns:
         HttpResponse: Response object with albums template.
     """
+    sort_by = request.GET.get("sort_by", "name")  # Default to 'name'
+    sort_order = request.GET.get("sort_order", "asc")  # Default to ascending order
+    valid_sort_fields = ["name", "release_date", "artists__name"]
+    valid_sort_orders = ["asc", "desc"]
+
+    if sort_by not in valid_sort_fields:
+        sort_by = "name"
+    if sort_order not in valid_sort_orders:
+        sort_order = "asc"
+
+    ordering = f"{'-' if sort_order == 'desc' else ''}{sort_by}"
+
     form = SearchForm(data=request.GET)
     albums: QuerySet[Album] = Album.objects.all()
     if form.is_valid():
         query = form.cleaned_data.get("query")
         if query:
-            albums = albums.filter(
-                name__icontains=query,
-            ) | albums.filter(
-                album_id__icontains=query,
-            ) | albums.filter(
-                release_date__icontains=query,
-            ) | albums.filter(
-                type__icontains=query,
-            ) | albums.filter(
-                artists__name__icontains=query,
+            albums = (
+                albums.filter(
+                    name__icontains=query,
+                )
+                | albums.filter(
+                    album_id__icontains=query,
+                )
+                | albums.filter(
+                    release_date__icontains=query,
+                )
+                | albums.filter(
+                    album_type__icontains=query,
+                )
+                | albums.filter(
+                    artists__name__icontains=query,
+                )
             )
+    albums.order_by(ordering)
     paginator: Paginator = Paginator(object_list=albums, per_page=10)
     page_number: str | None = request.GET.get("page")
     page_obj: Page = paginator.get_page(number=page_number)
@@ -170,6 +202,18 @@ def song_list(request: HttpRequest) -> HttpResponse:
     Returns:
         HttpResponse: Response object with Song template.
     """
+    sort_by = request.GET.get("sort_by", "name")  # Default to 'name'
+    sort_order = request.GET.get("sort_order", "asc")  # Default to ascending order
+    valid_sort_fields = ["name", "release_date", "artists__name", "album__name"]
+    valid_sort_orders = ["asc", "desc"]
+
+    if sort_by not in valid_sort_fields:
+        sort_by = "name"
+    if sort_order not in valid_sort_orders:
+        sort_order = "asc"
+
+    ordering = f"{'-' if sort_order == 'desc' else ''}{sort_by}"
+
     form = SearchForm(data=request.GET)
     songs: QuerySet[Song] = Song.objects.all()
     if form.is_valid():
@@ -195,6 +239,7 @@ def song_list(request: HttpRequest) -> HttpResponse:
                     album__name__icontains=query,
                 )
             )
+    songs.order_by(ordering)
     paginator: Paginator = Paginator(object_list=songs, per_page=10)
     page_number: str | None = request.GET.get("page")
     page_obj: Page = paginator.get_page(number=page_number)

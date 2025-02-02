@@ -7,78 +7,168 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Artist',
+            name="Artist",
             fields=[
-                ('name', models.CharField(max_length=255, unique=True)),
-                ('artist_id', models.CharField(blank=True, max_length=255)),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                ("name", models.CharField(max_length=255, unique=True)),
+                ("artist_id", models.CharField(blank=True, max_length=255)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Genre',
+            name="Genre",
             fields=[
-                ('name', models.CharField(max_length=255, unique=True)),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                ("name", models.CharField(max_length=255, unique=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Playlist',
+            name="Playlist",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('description', models.TextField(blank=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("description", models.TextField(blank=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Album',
+            name="Album",
             fields=[
-                ('name', models.CharField(max_length=255)),
-                ('release_date', models.DateField()),
-                ('album_type', models.CharField(max_length=255)),
-                ('album_id', models.CharField(blank=True, max_length=255)),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('artists', models.ManyToManyField(blank=True, related_name='albums', to='spofify_integration.artist')),
+                ("name", models.CharField(max_length=255)),
+                ("release_date", models.DateField()),
+                ("album_type", models.CharField(max_length=255)),
+                ("album_id", models.CharField(blank=True, max_length=255)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "artists",
+                    models.ManyToManyField(
+                        blank=True,
+                        related_name="albums",
+                        to="spofify_integration.artist",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('name', 'release_date', 'album_id')},
+                "unique_together": {("name", "release_date", "album_id")},
             },
         ),
         migrations.AddField(
-            model_name='artist',
-            name='genres',
-            field=models.ManyToManyField(blank=True, related_name='artists', to='spofify_integration.genre'),
+            model_name="artist",
+            name="genres",
+            field=models.ManyToManyField(
+                blank=True, related_name="artists", to="spofify_integration.genre"
+            ),
         ),
         migrations.CreateModel(
-            name='Song',
+            name="Song",
             fields=[
-                ('name', models.CharField(max_length=255)),
-                ('release_date', models.DateField()),
-                ('popularity', models.IntegerField(help_text='Popularity score should be between 0 and 100.', validators=[django.core.validators.MinValueValidator(limit_value=0), django.core.validators.MaxValueValidator(limit_value=100)])),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('album', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='songs', to='spofify_integration.album')),
-                ('artists', models.ManyToManyField(blank=True, related_name='songs', to='spofify_integration.artist')),
+                ("name", models.CharField(max_length=255)),
+                ("release_date", models.DateField()),
+                (
+                    "popularity",
+                    models.IntegerField(
+                        help_text="Popularity score should be between 0 and 100.",
+                        validators=[
+                            django.core.validators.MinValueValidator(limit_value=0),
+                            django.core.validators.MaxValueValidator(limit_value=100),
+                        ],
+                    ),
+                ),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "album",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="songs",
+                        to="spofify_integration.album",
+                    ),
+                ),
+                (
+                    "artists",
+                    models.ManyToManyField(
+                        blank=True,
+                        related_name="songs",
+                        to="spofify_integration.artist",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('name', 'album', 'release_date')},
+                "unique_together": {("name", "album", "release_date")},
             },
         ),
         migrations.CreateModel(
-            name='PlaylistSong',
+            name="PlaylistSong",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('playlist', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='spofify_integration.playlist')),
-                ('song', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='spofify_integration.song')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "playlist",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="spofify_integration.playlist",
+                    ),
+                ),
+                (
+                    "song",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="spofify_integration.song",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('playlist', 'song')},
+                "unique_together": {("playlist", "song")},
             },
         ),
     ]

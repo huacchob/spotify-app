@@ -67,6 +67,7 @@ class Song(models.Model):
     """
     Model for songs.
     """
+
     class Meta:
         unique_together = (
             "name",

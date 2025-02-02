@@ -13,6 +13,28 @@
   </div>
 </form>
 
+<!-- Sort Form -->
+<form method="get">
+  <label for="sort_by">Sort By:</label>
+  <select name="sort_by" id="sort_by">
+    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name</option>
+    <option value="release_date" {% if sort_by == 'release_date' %}selected{% endif %}>Release Date</option>
+    <option value="artists__name" {% if sort_by == 'artists__name' %}selected{% endif %}>Artist</option>
+    <option value="album__name" {% if sort_by == 'album__name' %}selected{% endif %}>Album</option>
+  </select>
+
+  <label for="sort_order">Order:</label>
+  <select name="sort_order" id="sort_order">
+    <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>Ascending</option>
+    <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Descending</option>
+  </select>
+
+  <!-- Include the current search query in the sorting form -->
+  <input type="hidden" name="query" value="{{ request.GET.query }}">
+  <button type="submit" class="btn btn-primary">Sort</button>
+</form>
+
+<!-- Table -->
 <table class="table table-striped">
   <thead>
     <tr>
@@ -50,8 +72,8 @@
 <div class="pagination">
   <span class="step-links">
     {% if page_obj.has_previous %}
-      <a href="?page=1&query={{ request.GET.query }}">&laquo; first</a>
-      <a href="?page={{ page_obj.previous_page_number }}&query={{ request.GET.query }}">previous</a>
+      <a href="?page=1&query={{ request.GET.query }}&sort_by={{ request.GET.sort_by }}&sort_order={{ request.GET.sort_order }}">&laquo; first</a>
+      <a href="?page={{ page_obj.previous_page_number }}&query={{ request.GET.query }}&sort_by={{ request.GET.sort_by }}&sort_order={{ request.GET.sort_order }}">previous</a>
     {% endif %}
 
     <span class="current">
@@ -59,8 +81,8 @@
     </span>
 
     {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}&query={{ request.GET.query }}">next</a>
-      <a href="?page={{ page_obj.paginator.num_pages }}&query={{ request.GET.query }}">last &raquo;</a>
+      <a href="?page={{ page_obj.next_page_number }}&query={{ request.GET.query }}&sort_by={{ request.GET.sort_by }}&sort_order={{ request.GET.sort_order }}">next</a>
+      <a href="?page={{ page_obj.paginator.num_pages }}&query={{ request.GET.query }}&sort_by={{ request.GET.sort_by }}&sort_order={{ request.GET.sort_order }}">last &raquo;</a>
     {% endif %}
   </span>
 </div>
