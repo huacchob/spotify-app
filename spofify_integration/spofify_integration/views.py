@@ -49,15 +49,20 @@ def artist_list(request: HttpRequest) -> HttpResponse:
     valid_sort_fields = ["name"]
     valid_sort_orders = ["asc", "desc"]
 
+    # Validate the sorting parameters
     if sort_by not in valid_sort_fields:
         sort_by = "name"
     if sort_order not in valid_sort_orders:
         sort_order = "asc"
 
+    # Prepare the ordering string
     ordering = f"{'-' if sort_order == 'desc' else ''}{sort_by}"
 
+    # Initialize the search form and get the albums queryset
     form = SearchForm(data=request.GET)
     artists: QuerySet[Artist] = Artist.objects.all().order_by("name")
+
+    # Apply search filtering if the form is valid
     if form.is_valid():
         query = form.cleaned_data.get("query")
         if query:
@@ -66,10 +71,16 @@ def artist_list(request: HttpRequest) -> HttpResponse:
             ) | artists.filter(
                 artist_id__icontains=query,
             )
-    artists.order_by(ordering)
+
+    # Apply sorting by ordering, and re-assign the sorted queryset to 'artists'
+    artists = artists.order_by(ordering)
+
+    # Paginate the artists
     paginator: Paginator = Paginator(object_list=artists, per_page=10)
     page_number: str | None = request.GET.get("page")
     page_obj: Page = paginator.get_page(number=page_number)
+
+    # Return the rendered template with the context
     return render(
         request=request,
         template_name="spotify_integration/artists.html",
@@ -77,6 +88,8 @@ def artist_list(request: HttpRequest) -> HttpResponse:
             "artists": page_obj.object_list,
             "page_obj": page_obj,
             "form": form,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
         },
     )
 
