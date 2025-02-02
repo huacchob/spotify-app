@@ -123,39 +123,40 @@ def album_list(request: HttpRequest) -> HttpResponse:
     valid_sort_fields = ["name", "release_date", "artists__name"]
     valid_sort_orders = ["asc", "desc"]
 
+    # Validate the sorting parameters
     if sort_by not in valid_sort_fields:
         sort_by = "name"
     if sort_order not in valid_sort_orders:
         sort_order = "asc"
 
+    # Prepare the ordering string
     ordering = f"{'-' if sort_order == 'desc' else ''}{sort_by}"
 
+    # Initialize the search form and get the songs queryset
     form = SearchForm(data=request.GET)
     albums: QuerySet[Album] = Album.objects.all()
+
+    # Apply search filtering if the form is valid
     if form.is_valid():
         query = form.cleaned_data.get("query")
         if query:
             albums = (
-                albums.filter(
-                    name__icontains=query,
-                )
-                | albums.filter(
-                    album_id__icontains=query,
-                )
-                | albums.filter(
-                    release_date__icontains=query,
-                )
-                | albums.filter(
-                    album_type__icontains=query,
-                )
-                | albums.filter(
-                    artists__name__icontains=query,
-                )
+                albums.filter(name__icontains=query)
+                | albums.filter(album_id__icontains=query)
+                | albums.filter(release_date__icontains=query)
+                | albums.filter(album_type__icontains=query)
+                | albums.filter(artists__name__icontains=query)
             )
+
+    # Apply sorting by ordering
     albums.order_by(ordering)
+
+    # Paginate the songs
     paginator: Paginator = Paginator(object_list=albums, per_page=10)
     page_number: str | None = request.GET.get("page")
     page_obj: Page = paginator.get_page(number=page_number)
+
+    # Return the rendered template with the context
     return render(
         request=request,
         template_name="spotify_integration/albums.html",
@@ -163,6 +164,8 @@ def album_list(request: HttpRequest) -> HttpResponse:
             "albums": page_obj.object_list,
             "page_obj": page_obj,
             "form": form,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
         },
     )
 
@@ -207,42 +210,41 @@ def song_list(request: HttpRequest) -> HttpResponse:
     valid_sort_fields = ["name", "release_date", "artists__name", "album__name"]
     valid_sort_orders = ["asc", "desc"]
 
+    # Validate the sorting parameters
     if sort_by not in valid_sort_fields:
         sort_by = "name"
     if sort_order not in valid_sort_orders:
         sort_order = "asc"
 
+    # Prepare the ordering string
     ordering = f"{'-' if sort_order == 'desc' else ''}{sort_by}"
 
+    # Initialize the search form and get the songs queryset
     form = SearchForm(data=request.GET)
     songs: QuerySet[Song] = Song.objects.all()
+
+    # Apply search filtering if the form is valid
     if form.is_valid():
         query = form.cleaned_data.get("query")
         if query:
             songs = (
-                songs.filter(
-                    name__icontains=query,
-                )
-                | songs.filter(
-                    id__icontains=query,
-                )
-                | songs.filter(
-                    release_date__icontains=query,
-                )
-                | songs.filter(
-                    popularity__icontains=query,
-                )
-                | songs.filter(
-                    artists__name__icontains=query,
-                )
-                | songs.filter(
-                    album__name__icontains=query,
-                )
+                songs.filter(name__icontains=query)
+                | songs.filter(id__icontains=query)
+                | songs.filter(release_date__icontains=query)
+                | songs.filter(popularity__icontains=query)
+                | songs.filter(artists__name__icontains=query)
+                | songs.filter(album__name__icontains=query)
             )
-    songs.order_by(ordering)
+
+    # Apply sorting by ordering
+    songs = songs.order_by(ordering)  # Re-assign the result of the ordering
+
+    # Paginate the songs
     paginator: Paginator = Paginator(object_list=songs, per_page=10)
     page_number: str | None = request.GET.get("page")
     page_obj: Page = paginator.get_page(number=page_number)
+
+    # Return the rendered template with the context
     return render(
         request=request,
         template_name="spotify_integration/songs.html",
@@ -250,6 +252,8 @@ def song_list(request: HttpRequest) -> HttpResponse:
             "songs": page_obj.object_list,
             "page_obj": page_obj,
             "form": form,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
         },
     )
 
