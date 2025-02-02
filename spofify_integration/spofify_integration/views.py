@@ -132,7 +132,7 @@ def album_list(request: HttpRequest) -> HttpResponse:
     # Prepare the ordering string
     ordering = f"{'-' if sort_order == 'desc' else ''}{sort_by}"
 
-    # Initialize the search form and get the songs queryset
+    # Initialize the search form and get the albums queryset
     form = SearchForm(data=request.GET)
     albums: QuerySet[Album] = Album.objects.all()
 
@@ -148,10 +148,10 @@ def album_list(request: HttpRequest) -> HttpResponse:
                 | albums.filter(artists__name__icontains=query)
             )
 
-    # Apply sorting by ordering
-    albums.order_by(ordering)
+    # Apply sorting by ordering, and re-assign the sorted queryset to 'albums'
+    albums = albums.order_by(ordering)
 
-    # Paginate the songs
+    # Paginate the albums
     paginator: Paginator = Paginator(object_list=albums, per_page=10)
     page_number: str | None = request.GET.get("page")
     page_obj: Page = paginator.get_page(number=page_number)
