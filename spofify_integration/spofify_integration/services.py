@@ -200,11 +200,13 @@ class SpotifyService:
         Args:
             artist (str): Artist name.
         """
+        if Artist.objects.filter(name=artist).exists():
+            return
         try:
             results: Any | None = self.client.search(
                 q=artist,
                 type="artist",
-                limit=2,
+                limit=10,
             )
         except spotipy.SpotifyException as e:
             logger.error(f"Spotify API error: {e}")
@@ -217,20 +219,23 @@ class SpotifyService:
             logger.info(f"No results found for artist: {artist}")
             return
 
-        artist = results["artists"]["items"][0]
-        genres: set[Genre] = set()
-        for genre in artist["genres"]:
-            if genre and genre != "-":
-                g: Genre = self.get_or_create_genres(
-                    name=genre,
-                )
-                genres.add(g)
+        for a in results["artists"]["items"]:
+            if artist.lower() != a["name"].lower():
+                continue
+            genres: set[Genre] = set()
+            for genre in a["genres"]:
+                if genre and genre != "-":
+                    g: Genre = self.get_or_create_genres(
+                        name=genre,
+                    )
+                    genres.add(g)
 
-        self.get_or_create_artist(
-            name=artist["name"],
-            artist_id=artist["id"],
-            genres=genres,
-        )
+            self.get_or_create_artist(
+                name=a["name"],
+                artist_id=a["id"],
+                genres=genres,
+            )
+            return
 
     def search_artist_and_album(self, artist: str, album_name: str) -> None:
         """
@@ -240,11 +245,13 @@ class SpotifyService:
             artist (str): Artist name.
             album_name (str): Album name.
         """
+        if Album.objects.filter(name=album_name).exists():
+            return
         try:
             results: Any | None = self.client.search(
                 q=f"{artist} {album_name}",
                 type="album",
-                limit=2,
+                limit=10,
             )
         except spotipy.SpotifyException as e:
             logger.error(f"Spotify API error: {e}")
@@ -257,25 +264,27 @@ class SpotifyService:
             logger.info(f"No results found for artist: {artist}, track: {album_name}")
             return
 
-        album = results["albums"]["items"][0]
-
-        album_artists = set()
-        for album_artist in album["artists"]:
-            if album_artist and album_artist != "-":
-                self.search_artist(artist=album_artist["name"])
-                album_artists.add(
-                    self.object_handling(
-                        object_type=Artist,
-                        obj_params={"name__iexact": album_artist["name"]},
+        for album in results["albums"]["items"]:
+            if album_name.lower() != album["name"].lower():
+                continue
+            album_artists = set()
+            for album_artist in album["artists"]:
+                if album_artist and album_artist != "-":
+                    self.search_artist(artist=album_artist["name"])
+                    album_artists.add(
+                        self.object_handling(
+                            object_type=Artist,
+                            obj_params={"name__iexact": album_artist["name"]},
+                        )
                     )
-                )
-        self.get_or_create_album(
-            name=album["name"],
-            release_date=album["release_date"],
-            album_type=album["album_type"],
-            artists=album_artists,
-            album_id=album["id"],
-        )
+            self.get_or_create_album(
+                name=album["name"],
+                release_date=album["release_date"],
+                album_type=album["album_type"],
+                artists=album_artists,
+                album_id=album["id"],
+            )
+            return
 
     def search_artist_and_song(self, artist: str, track_name: str) -> None:
         """
@@ -285,11 +294,13 @@ class SpotifyService:
             artist (str): Artist name.
             track_name (str): Track name.
         """
+        if Song.objects.filter(name=track_name).exists():
+            return
         try:
             results: Any | None = self.client.search(
                 q=f"{artist} {track_name}",
                 type="track",
-                limit=2,
+                limit=10,
             )
         except spotipy.SpotifyException as e:
             logger.error(f"Spotify API error: {e}")
@@ -302,36 +313,40 @@ class SpotifyService:
             logger.info(f"No results found for artist: {artist}, track: {track_name}")
             return
 
-        track = results["tracks"]["items"][0]
-
-        track_artists = set()
-        for album_artist in track["album"]["artists"]:
-            if album_artist and album_artist != "-":
-                self.search_artist(artist=album_artist["name"])
-        for track_artist in track["artists"]:
-            if track_artist and track_artist != "-":
-                self.search_artist(artist=track_artist["name"])
-                track_artists.add(
-                    self.object_handling(
-                        object_type=Artist,
-                        obj_params={"name__iexact": album_artist["name"]},
-                    ),
-                )
-        self.search_artist_and_album(
-            artist=artist,
-            album_name=track["album"]["name"],
-        )
-        album: Album = self.object_handling(
-            object_type=Album,
-            obj_params={"name__iexact": track["album"]["name"]},
-        )
-        self.get_or_create_song(
-            name=track["name"],
-            album=album,
-            release_date=track["album"]["release_date"],
-            popularity=track["popularity"],
-            artists=track_artists,
-        )
+        for track in results["tracks"]["items"]:
+            if track_name.lower() != track["name"].lower():
+                continue
+            track_artists = set()
+            album_artist = ""
+            for a_artist in track["album"]["artists"]:
+                if a_artist and a_artist != "-":
+                    self.search_artist(artist=a_artist["name"])
+                    album_artist = a_artist["name"]
+            for track_artist in track["artists"]:
+                if track_artist and track_artist != "-":
+                    self.search_artist(artist=track_artist["name"])
+                    track_artists.add(
+                        self.object_handling(
+                            object_type=Artist,
+                            obj_params={"name__iexact": track_artist["name"]},
+                        ),
+                    )
+            self.search_artist_and_album(
+                artist=album_artist,
+                album_name=track["album"]["name"],
+            )
+            album: Album = self.object_handling(
+                object_type=Album,
+                obj_params={"name__iexact": track["album"]["name"]},
+            )
+            self.get_or_create_song(
+                name=track["name"],
+                album=album,
+                release_date=track["album"]["release_date"],
+                popularity=track["popularity"],
+                artists=track_artists,
+            )
+            return
 
     def search_all_albums_by_artist(self, artist: str) -> None:
         """
@@ -377,10 +392,6 @@ class SpotifyService:
                         artist=a["name"],
                         album_name=album["name"],
                     )
-            self.search_artist_and_album(
-                artist=artist,
-                album_name=album["name"],
-            )
 
     def search_all_songs_by_artist(self, artist: str) -> None:
         """

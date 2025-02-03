@@ -21,7 +21,13 @@ class Artist(models.Model):
     Model for music artists.
     """
 
-    name = models.CharField(max_length=255, unique=True)
+    class Meta:
+        unique_together = (
+            "name",
+            "artist_id",
+        )
+
+    name = models.CharField(max_length=255)
     genres = models.ManyToManyField(
         to=Genre,
         related_name="artists",
@@ -42,7 +48,6 @@ class Album(models.Model):
     class Meta:
         unique_together = (
             "name",
-            "release_date",
             "album_id",
         )
 
@@ -71,7 +76,6 @@ class Song(models.Model):
     class Meta:
         unique_together = (
             "name",
-            "album",
             "release_date",
         )
 
